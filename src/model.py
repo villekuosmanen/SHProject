@@ -52,7 +52,7 @@ def clean_data(input_file):
         ratings[:, 1] -= 1
         
     train_sparse, test_sparse = create_sparse_matrices(ratings, n_users, n_items)
-    return ratings[:, 0], ratings[:, 1], train_sparse, test_sparse
+    return ratings[:, 0], ratings[:, 1], train_sparse, test_sparse, unique_items, unique_users
 
 def create_sparse_matrices(ratings, n_users, n_items):
     test_set_size = int(len(ratings) * TEST_SET_RATIO)
@@ -98,7 +98,7 @@ def generate_recommendations(user_idx, user_rated, row_factor, col_factor, k):
     """
 
     # bounds checking for args
-    assert (row_factor.shape[0] - len(user_rated)) >= k
+    assert (col_factor.shape[0] - len(user_rated)) >= k
 
     # retrieve user factor
     user_f = row_factor[user_idx]
