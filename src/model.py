@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pickle
 from scipy.sparse import coo_matrix
 import tensorflow as tf
 
@@ -118,3 +119,62 @@ def generate_recommendations(user_idx, user_rated, row_factor, col_factor, k):
     recommended_items.reverse()
 
     return recommended_items
+
+def load_saved_model(development_dataset):
+    user_map, item_map, unique_items, unique_users, output_row, output_col
+    if development_dataset:
+        with open("user_map-100k.pickle", "rb") as fp:
+            user_map = pickle.load(fp)
+        with open("item_map-100k.pickle", "rb") as fp:
+            item_map = pickle.load(fp)
+        with open("unique_items-100k.pickle", "rb") as fp:
+            unique_items = pickle.load(fp)
+        with open("unique_users-100k.pickle", "rb") as fp:
+            unique_users = pickle.load(fp)
+        with open("output_row-100k.pickle", "rb") as fp:
+            output_row = pickle.load(fp)
+        with open("output_col-100k.pickle", "rb") as fp:
+            output_col = pickle.load(fp)
+    else:
+        with open("user_map-20m.pickle", "rb") as fp:
+            user_map = pickle.load(fp)
+        with open("item_map-20m.pickle", "rb") as fp:
+            item_map = pickle.load(fp)
+        with open("unique_items-20m.pickle", "rb") as fp:
+            unique_items = pickle.load(fp)
+        with open("unique_users-20m.pickle", "rb") as fp:
+            unique_users = pickle.load(fp)
+        with open("output_row-20m.pickle", "rb") as fp:
+            output_row = pickle.load(fp)
+        with open("output_col-20m.pickle", "rb") as fp:
+            output_col = pickle.load(fp)
+    return user_map, item_map, unique_items, unique_users, output_row, output_col
+
+def save_model(development_dataset, user_map, item_map, unique_items, unique_users, output_row, output_col):
+    if development_dataset:
+        with open("user_map-100k.pickle", "wb+") as fp:
+            pickle.dump(user_map, fp)
+        with open("item_map-100k.pickle", "wb+") as fp:
+            pickle.dump(item_map, fp)
+        with open("unique_items-100k.pickle", "wb+") as fp:
+            pickle.dump(unique_items, fp)
+        with open("unique_users-100k.pickle", "wb+") as fp:
+            pickle.dump(unique_users, fp)
+        with open("output_row-100k.pickle", "wb+") as fp:
+            pickle.dump(output_row, fp)
+        with open("output_col-100k.pickle", "wb+") as fp:
+            pickle.dump(output_col, fp)
+    else:
+        with open("user_map-20m.pickle", "wb+") as fp:
+            pickle.dump(user_map, fp)
+        with open("item_map-20m.pickle", "wb+") as fp:
+            pickle.dump(item_map, fp)
+        with open("unique_items-20m.pickle", "wb+") as fp:
+            pickle.dump(unique_items, fp)
+        with open("unique_users-20m.pickle", "wb+") as fp:
+            pickle.dump(unique_users, fp)
+        with open("output_row-20m.pickle", "wb+") as fp:
+            pickle.dump(output_row, fp)
+        with open("output_col-20m.pickle", "wb+") as fp:
+            pickle.dump(output_col, fp)
+    
