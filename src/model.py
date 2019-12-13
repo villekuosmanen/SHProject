@@ -112,16 +112,19 @@ def generate_recommendations(user_idx, user_rated, row_factor, col_factor, k):
     candidate_items = np.argsort(pred_ratings)[-k_r:]
 
     # remove previously rated items and take top k
-    recommended_items = [i for i in candidate_items if i not in user_rated]
-    recommended_items = recommended_items[-k:]
-
-    # flip to sort highest rated first
-    recommended_items.reverse()
-
-    return recommended_items
+    recommended_items = candidate_items
+    if (user_rated):
+        recommended_items = [i for i in candidate_items if i not in user_rated]
+        recommended_items = recommended_items[-k:]
+        recommended_items.reverse()
+        return recommended_items
+    else:
+        recommended_items = recommended_items[-k:]
+        np.flip(recommended_items) # Maybe not correct...
+        return recommended_items.tolist()
 
 def load_saved_model(development_dataset):
-    user_map, item_map, unique_items, unique_users, output_row, output_col
+    user_map, item_map, unique_items, unique_users, output_row, output_col = None, None, None, None, None, None
     if development_dataset:
         with open("user_map-100k.pickle", "rb") as fp:
             user_map = pickle.load(fp)
