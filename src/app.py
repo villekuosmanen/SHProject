@@ -33,7 +33,7 @@ def initialise():
     global output_col
     global unique_items
     global unique_users
-    user_map, item_map, train_sparse, test_sparse, unique_items, unique_users = model.clean_data("../data/ratings.csv")
+    user_map, item_map, train_sparse, test_sparse, unique_items, unique_users = model.clean_data("../data/ml_100k/ratings.csv")
     init_movies(unique_items)
 
     latent_factors = 14
@@ -46,7 +46,7 @@ def initialise():
     print('Train: ' + str(train_rmse) + ', Test: ' + str(test_rmse))
     
 def init_movies(np_items):
-    movies_df = pd.read_csv("../data/movies.csv", dtype={
+    movies_df = pd.read_csv("../data/ml_100k/movies.csv", dtype={
                                'movieId': int,
                                'title': str,
                                'genres': str,
