@@ -1,5 +1,6 @@
-from flask import Flask
+from flask import Flask, jsonify, request
 import pandas as pd
+import json
 
 import wals
 import model
@@ -18,13 +19,20 @@ movies_map = {}
 def hello_world():
     return 'Hello, World!'
 
-@app.route('/recommendations/<user_id>')
+@app.route('/recommendations/<user_id>/recommendations')
 def get_recommendations(user_id):
     user_rated = [item_map[i] for i, x in enumerate(user_map) if x == int(user_id)]
     print(user_rated)
     recommendations = model.generate_recommendations(int(user_id), user_rated, output_row, output_col, 6)
     recommendations = [{'movieId': int(x), 'title': movies_map[int(x)]} for x in recommendations]
     return {'recommendations': recommendations}
+
+@app.route('/recommendations/<int:user_id>/responses', methods=['POST'])
+def post_responses(user_id):
+    print(request.json)
+    with open("../responses/" + str(user_id), "w+") as fp:
+        fp.write(json.dumps(request.json))
+    return jsonify(success=True)
 
 def initialise():
     global user_map
