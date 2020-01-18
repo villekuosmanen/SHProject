@@ -24,7 +24,13 @@ def get_movies():
     moviesList = [{'key': key, 'title': value} for key, value in movies_map.items()]
     return {'movies': moviesList}
 
-@app.route('/recommendations/<user_id>/recommendations')
+@app.route('/movies/<int:user_id>/responses', methods=['POST'])
+def post_movie_responses(user_id):
+    print(request.json)
+    # TODO
+    return jsonify(success=True)
+
+@app.route('/recommendations/<int:user_id>/recommendations')
 def get_recommendations(user_id):
     user_rated = [item_map[i] for i, x in enumerate(user_map) if x == int(user_id)]
     print(user_rated)
@@ -33,8 +39,7 @@ def get_recommendations(user_id):
     return {'recommendations': recommendations}
 
 @app.route('/recommendations/<int:user_id>/responses', methods=['POST'])
-def post_responses(user_id):
-    print(request.json)
+def post_recommendation_responses(user_id):
     with open("../responses/" + str(user_id), "w+") as fp:
         fp.write(json.dumps(request.json))
     return jsonify(success=True)
