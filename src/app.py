@@ -19,6 +19,11 @@ movies_map = {}
 def hello_world():
     return 'Hello, World!'
 
+@app.route('/movies')
+def get_movies():
+    moviesList = [{'key': key, 'title': value} for key, value in movies_map.items()]
+    return {'movies': moviesList}
+
 @app.route('/recommendations/<user_id>/recommendations')
 def get_recommendations(user_id):
     user_rated = [item_map[i] for i, x in enumerate(user_map) if x == int(user_id)]
