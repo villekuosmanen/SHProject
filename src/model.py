@@ -180,4 +180,3 @@ def save_model(development_dataset, user_map, item_map, unique_items, unique_use
             pickle.dump(output_row, fp)
         with open("output_col-20m.pickle", "wb+") as fp:
             pickle.dump(output_col, fp)
-    
