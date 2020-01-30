@@ -1,23 +1,20 @@
 from flask import Flask, jsonify, request
 import pandas as pd
+import numpy as np
+from surprise import SVD
+from surprise import Dataset
+from surprise import Reader
+from surprise import accuracy
+from surprise.model_selection import train_test_split
 import json
+import datetime
 
-import wals
-import model
+from recommender_algo.editable_svd import EditableSVD
 
 app = Flask(__name__)
 
-user_map = None
-item_map = None
-output_row = None
-output_col = None
-unique_items = None
-unique_users = None
+algo = None
 movies_map = {}
-
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
 
 @app.route('/movies')
 def get_movies():
@@ -27,15 +24,13 @@ def get_movies():
 @app.route('/movies/<int:user_id>/responses', methods=['POST'])
 def post_movie_responses(user_id):
     print(request.json)
-    # TODO
+    # TODO retrain model, and save results
     return jsonify(success=True)
 
 @app.route('/recommendations/<int:user_id>/recommendations')
 def get_recommendations(user_id):
-    user_rated = [item_map[i] for i, x in enumerate(user_map) if x == int(user_id)]
-    print(user_rated)
-    recommendations = model.generate_recommendations(int(user_id), user_rated, output_row, output_col, 6)
-    recommendations = [{'movieId': int(x), 'title': movies_map[int(x)]} for x in recommendations]
+    recommendations = top_n_recommendations(user_id)
+    recommendations = [{'movieId': int(x[0]), 'title': movies_map[int(x[0])]} for x in recommendations]
     return {'recommendations': recommendations}
 
 @app.route('/recommendations/<int:user_id>/responses', methods=['POST'])
@@ -45,37 +40,49 @@ def post_recommendation_responses(user_id):
     return jsonify(success=True)
 
 def initialise():
-    global user_map
-    global item_map
-    global output_row
-    global output_col
-    global unique_items
-    global unique_users
-    user_map, item_map, train_sparse, test_sparse, unique_items, unique_users = model.clean_data("../data/ml_100k/ratings.csv")
-    init_movies(unique_items)
+    global algo
 
-    latent_factors = 14
-    num_iters = 20
+    dev_file = "../data/ml_100k/ratings.csv"
+    prod_file = "../data/ml-20m/ratings.csv"
+    ratings_df = pd.read_csv(dev_file, dtype={
+        'userId': np.int32,
+        'movieId': np.int32,
+        'rating': np.float32,
+        'timestamp': np.int32,
+    })
 
-    output_row, output_col = model.train_model(train_sparse, latent_factors, num_iters)
+    reader = Reader(rating_scale=(1, 5))
+    data = Dataset.load_from_df(ratings_df[['userId', 'movieId', 'rating']], reader)
+    trainset, testset = train_test_split(data, test_size=.25)
+    algo = EditableSVD()
 
-    train_rmse = wals.get_rmse(output_row, output_col, train_sparse)
-    test_rmse = wals.get_rmse(output_row, output_col, test_sparse)
-    print('Train: ' + str(train_rmse) + ', Test: ' + str(test_rmse))
+    train_start_time = datetime.datetime.now()
+    algo.fit(trainset)
+    train_end_time = datetime.datetime.now()
+    print("Training duration: " + str(train_end_time - train_start_time))
+
+    init_movies()
     
-def init_movies(np_items):
+def init_movies():
     movies_df = pd.read_csv("../data/ml_100k/movies.csv", dtype={
                                'movieId': int,
                                'title': str,
                                'genres': str,
                              })
     
-    i = 0
     for index, row in movies_df.iterrows():
-        if (row['movieId'] in np_items):
-            movies_map[i] = row['title']
-            i += 1
-    print(str(np_items.shape[0]) + ', ' + str(i))
-    assert(np_items.shape[0] == i)
+            movies_map[row['movieId']] = row['title']
+
+def top_n_recommendations(user_id):
+    n = 6
+    top_n = []
+    for i in movies_map:
+        # TODO filter out rated movies
+        prediction = algo.predict(user_id, i)
+        top_n.append((prediction.iid, prediction.est))
+
+    # Then sort the predictions for each user and retrieve the k highest ones.
+    top_n.sort(key=lambda x: x[1], reverse=True)
+    return top_n[:n]
 
 initialise()
