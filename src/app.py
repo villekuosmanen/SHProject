@@ -15,6 +15,7 @@ app = Flask(__name__)
 
 algo = None
 movies_map = {}
+user_rated_items = None
 
 @app.route('/movies')
 def get_movies():
@@ -23,8 +24,14 @@ def get_movies():
 
 @app.route('/movies/<int:user_id>/responses', methods=['POST'])
 def post_movie_responses(user_id):
-    print(request.json)
-    # TODO retrain model, and save results
+    global user_rated_items
+
+    responses = request.json
+    print(responses)
+
+    # Retrain model, and save results
+    user_rated_items = {rated_movie['key']: rated_movie['rating'] for rated_movie in responses['response']}
+    algo.fit_new_user(user_id, user_rated_items)
     return jsonify(success=True)
 
 @app.route('/recommendations/<int:user_id>/recommendations')
@@ -77,12 +84,14 @@ def top_n_recommendations(user_id):
     n = 6
     top_n = []
     for i in movies_map:
-        # TODO filter out rated movies
-        prediction = algo.predict(user_id, i)
-        top_n.append((prediction.iid, prediction.est))
+        # Filter out rated movies
+        if i not in user_rated_items:
+            prediction = algo.predict(user_id, i)
+            top_n.append((prediction.iid, prediction.est))
 
     # Then sort the predictions for each user and retrieve the k highest ones.
     top_n.sort(key=lambda x: x[1], reverse=True)
+    print(str(user_id) + ": " + str(top_n))
     return top_n[:n]
 
 initialise()
