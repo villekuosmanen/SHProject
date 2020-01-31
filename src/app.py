@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 import pandas as pd
 import numpy as np
+import pickle
 from surprise import SVD
 from surprise import Dataset
 from surprise import Reader
@@ -16,6 +17,7 @@ app = Flask(__name__)
 algo = None
 movies_map = {}
 user_rated_items = None
+association_rules = None
 
 @app.route('/movies')
 def get_movies():
@@ -37,8 +39,24 @@ def post_movie_responses(user_id):
 @app.route('/recommendations/<int:user_id>/recommendations')
 def get_recommendations(user_id):
     recommendations = top_n_recommendations(user_id)
-    recommendations = [{'movieId': int(x[0]), 'title': movies_map[int(x[0])]} for x in recommendations]
-    return {'recommendations': recommendations}
+
+    recommendations_to_send = []
+    for x in recommendations:
+        movie_obj = {}
+        movie_obj['movieId'] = int(x[0])
+        movie_obj['title'] = movies_map[int(x[0])]
+        # TODO explanation
+        rows = association_rules.loc[association_rules['consequents'].apply(lambda cons: True if int(x[0]) in cons else False)]
+        for index, row in rows.iterrows():
+            antecedents = list(row['antecedents'])
+            if all([x in user_rated_items.keys() for x in antecedents]):
+                explanation = antecedents
+                movie_obj['explanation'] = [{'movieId': int(movie_id), 'title': movies_map[int(movie_id)]} for movie_id in explanation]
+                break
+
+        recommendations_to_send.append(movie_obj)
+    print(str(recommendations_to_send))
+    return {'recommendations': recommendations_to_send}
 
 @app.route('/recommendations/<int:user_id>/responses', methods=['POST'])
 def post_recommendation_responses(user_id):
@@ -48,27 +66,10 @@ def post_recommendation_responses(user_id):
 
 def initialise():
     global algo
-
-    dev_file = "../data/ml_100k/ratings.csv"
-    prod_file = "../data/ml-20m/ratings.csv"
-    ratings_df = pd.read_csv(dev_file, dtype={
-        'userId': np.int32,
-        'movieId': np.int32,
-        'rating': np.float32,
-        'timestamp': np.int32,
-    })
-
-    reader = Reader(rating_scale=(1, 5))
-    data = Dataset.load_from_df(ratings_df[['userId', 'movieId', 'rating']], reader)
-    trainset, testset = train_test_split(data, test_size=.25)
-    algo = EditableSVD()
-
-    train_start_time = datetime.datetime.now()
-    algo.fit(trainset)
-    train_end_time = datetime.datetime.now()
-    print("Training duration: " + str(train_end_time - train_start_time))
-
+    with open("algo-20m.pickle", "rb") as fp:
+            algo = pickle.load(fp)
     init_movies()
+    init_association_rules()
     
 def init_movies():
     movies_df = pd.read_csv("../data/ml_100k/movies.csv", dtype={
@@ -76,12 +77,16 @@ def init_movies():
                                'title': str,
                                'genres': str,
                              })
-    
     for index, row in movies_df.iterrows():
             movies_map[row['movieId']] = row['title']
 
+def init_association_rules():
+    global association_rules
+    with open("association-rules-20m.pickle", "rb") as fp:
+            association_rules = pickle.load(fp)
+
 def top_n_recommendations(user_id):
-    n = 6
+    n = 10
     top_n = []
     for i in movies_map:
         # Filter out rated movies
@@ -91,7 +96,6 @@ def top_n_recommendations(user_id):
 
     # Then sort the predictions for each user and retrieve the k highest ones.
     top_n.sort(key=lambda x: x[1], reverse=True)
-    print(str(user_id) + ": " + str(top_n))
     return top_n[:n]
 
 initialise()
