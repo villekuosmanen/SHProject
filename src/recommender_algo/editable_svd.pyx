@@ -18,6 +18,7 @@ class EditableSVD(SVD):
 
     def fit_new_user(self, raw_uid, rated_items):
         """
+            Fits a new user. Only edits this user's vectors and biases, leaves everything else intact
             rated_items: A dict of (raw) item id mapped to rating given by the new user
         """
         rng = get_rng(self.random_state)
@@ -29,6 +30,7 @@ class EditableSVD(SVD):
         self.pu = np.append(self.pu, 
                 rng.normal(self.init_mean, self.init_std_dev, (1, self.n_factors)), 
                 axis=0)
+        print(self.pu[user_inner_id])
 
         # TODO Add new user to raw and inner ID dicts of trainset
         self.trainset._raw2inner_id_users[raw_uid] = user_inner_id
@@ -99,3 +101,17 @@ class EditableSVD(SVD):
         #self.bi = bi
         self.pu = pu
         #self.qi = qi
+        print(self.pu[user_inner_id])
+
+    def delete_user(self, raw_uid):
+        """
+            Removes a user. Doesn't remove their effect from the biases of items or other users
+            rated_items: A dict of (raw) item id mapped to rating given by the new user
+        """
+        user_inner_id = self.trainset._raw2inner_id_users[raw_uid]
+        self.trainset._raw2inner_id_users.pop(raw_uid)
+        if self.trainset._inner2raw_id_users is not None:
+            self.trainset._inner2raw_id_users.pop(user_inner_id)
+        self.bu = np.delete(self.bu, user_inner_id)
+        self.pu = np.delete(self.pu, user_inner_id, axis=0)
+        self.trainset.n_users -= 1
