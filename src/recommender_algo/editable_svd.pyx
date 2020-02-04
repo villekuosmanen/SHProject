@@ -3,6 +3,7 @@ cimport numpy as np
 import numpy as np
 from surprise import SVD
 from surprise.utils import get_rng
+from surprise import PredictionImpossible
 
 class EditableSVD(SVD):
     """An SVD algorithm that allows adding new users without fully retraining the model"""
@@ -30,7 +31,6 @@ class EditableSVD(SVD):
         self.pu = np.append(self.pu, 
                 rng.normal(self.init_mean, self.init_std_dev, (1, self.n_factors)), 
                 axis=0)
-        print(self.pu[user_inner_id])
 
         # TODO Add new user to raw and inner ID dicts of trainset
         self.trainset._raw2inner_id_users[raw_uid] = user_inner_id
@@ -101,7 +101,6 @@ class EditableSVD(SVD):
         #self.bi = bi
         self.pu = pu
         #self.qi = qi
-        print(self.pu[user_inner_id])
 
     def delete_user(self, raw_uid):
         """
@@ -115,3 +114,29 @@ class EditableSVD(SVD):
         self.bu = np.delete(self.bu, user_inner_id)
         self.pu = np.delete(self.pu, user_inner_id, axis=0)
         self.trainset.n_users -= 1
+
+    # Override method
+    def estimate(self, u, i):
+        known_user = u in self.trainset._raw2inner_id_users
+        known_item = self.trainset.knows_item(i)
+
+        if self.biased:
+            est = self.trainset.global_mean
+
+            if known_user:
+                est += self.bu[u]
+
+            if known_item:
+                est += self.bi[i]
+
+            if known_user and known_item:
+                est += np.dot(self.qi[i], self.pu[u])
+
+        else:
+            if known_user and known_item:
+                est = np.dot(self.qi[i], self.pu[u])
+            else:
+                raise PredictionImpossible('User and item are unknown.')
+
+        return est
+

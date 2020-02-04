@@ -71,11 +71,11 @@ def get_recommendations(user_id):
 
             # Test prediction
             prediction = user_algo.predict(user_id, x[0])
+            print("Original: " + str(x[1]) + " Without film: " + str(prediction.est))
             prediction_delta = x[1] - prediction.est
             explanations.append((i, prediction_delta))
 
         explanations.sort(key=lambda x: x[1], reverse=True)
-        print(explanations)
         positives = explanations[:3]
         negatives = explanations[-3:]
         negatives.reverse()
@@ -86,7 +86,7 @@ def get_recommendations(user_id):
             {'movieId': int(movie_id), 'title': movies_map[int(movie_id)], 'influence': influence} for movie_id, influence in negatives]
 
         recommendations_to_send.append(movie_obj)
-    #print(str(recommendations_to_send))
+    print(str(recommendations_to_send))
     return {'recommendations': recommendations_to_send}
 
 @app.route('/recommendations/<int:user_id>/responses', methods=['POST'])
