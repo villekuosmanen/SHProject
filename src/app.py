@@ -12,6 +12,7 @@ import copy
 import pickle
 
 from recommender_algo.editable_svd import EditableSVD
+from explanation import InfluenceExplainer
 
 app = Flask(__name__)
 
@@ -52,33 +53,13 @@ def get_recommendations(user_id):
         movie_obj['title'] = movies_map[int(x[0])]
         
         # Generate explanation type A
-        # rows = association_rules.loc[association_rules['consequents'].apply(lambda cons: True if int(x[0]) in cons else False)]
-        # for index, row in rows.iterrows():
-        #     antecedents = list(row['antecedents'])
-        #     if all([x in user_rated_items.keys() for x in antecedents]):
-        #         explanation = antecedents
-        #         movie_obj['explanation'] = [{'movieId': int(movie_id), 'title': movies_map[int(movie_id)]} for movie_id in explanation]
-        #         break
+        # explainer = AssociationRulesExplainer(user_id, user_rated_items, user_algo)
+        # explanation = explainer.generate_explanation(x)
+        # movie_obj['explanation'] = [{'movieId': int(movie_id), 'title': movies_map[int(movie_id)]} for movie_id in explanation]
 
         # Generate explanation type B
-        explanations = []
-        for i in user_rated_items.keys():
-            items_copy = user_rated_items.copy()
-            items_copy.pop(i)
-
-            user_algo.delete_user(user_id)
-            user_algo.fit_new_user(user_id, items_copy)
-
-            # Test prediction
-            prediction = user_algo.predict(user_id, x[0])
-            print("Original: " + str(x[1]) + " Without film: " + str(prediction.est))
-            prediction_delta = x[1] - prediction.est
-            explanations.append((i, prediction_delta))
-
-        explanations.sort(key=lambda x: x[1], reverse=True)
-        positives = explanations[:3]
-        negatives = explanations[-3:]
-        negatives.reverse()
+        explainer = InfluenceExplainer(user_id, user_rated_items, user_algo)
+        positives, negatives = explainer.generate_explanation(x)
         movie_obj['explanation'] = {}
         movie_obj['explanation']['positives'] = [
             {'movieId': int(movie_id), 'title': movies_map[int(movie_id)], 'influence': influence} for movie_id, influence in positives]
