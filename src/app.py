@@ -95,7 +95,12 @@ def init_movies():
 def init_association_rules():
     global association_rules
     with open("association-rules-20m.pickle", "rb") as fp:
-            association_rules = pickle.load(fp)
+        association_rules = pickle.load(fp)
+    # Filter rules
+    association_rules['consequents_length'] = association_rules['consequents'].apply(lambda x: len(x))
+    association_rules['antecedents_length'] = association_rules['antecedents'].apply(lambda x: len(x))
+    association_rules = association_rules[(association_rules['support'] > 0.005) & (association_rules['confidence'] > 0.3) 
+        & (association_rules['antecedents_length'] < 4) & (association_rules['consequents_length'] == 1)]
 
 def top_n_recommendations(user_id):
     n = 10

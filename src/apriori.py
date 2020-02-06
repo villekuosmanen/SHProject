@@ -16,7 +16,7 @@ topn_df = pd.DataFrame.sparse.from_spmatrix(te_ary, columns=te.columns_)
 print("Sparse df created")
 
 apriori_start_time = datetime.datetime.now()
-frequent_itemsets = apriori(topn_df, min_support=0.001, verbose=1, low_memory=True, use_colnames=True)
+frequent_itemsets = apriori(topn_df, min_support=0.002, verbose=1, low_memory=True, use_colnames=True)
 apriori_end_time = datetime.datetime.now()
 print("Training duration: " + str(apriori_end_time - apriori_start_time))
 
