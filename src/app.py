@@ -125,6 +125,7 @@ def get_recommendations(user_id):
             recommendations_to_send.append(movie_obj)
             if (basic_left == 0 and influence_left == 0):
                 break
+    random.shuffle(recommendations_to_send)
     print(str(recommendations_to_send))
     return {'recommendations': recommendations_to_send}
 

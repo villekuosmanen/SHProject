@@ -1,8 +1,12 @@
 Model fidelity:
 - Recommender system trained using 75%/25% train-test split
-- Top-20 recommendations (inc. ones the user has rated before) were listed for all users
 - Association rules were calculated with max. antecedent length of 3, consequent length of 1, min. support of 0.005 and min. confidence of 0.3
-- Using a 1% sample of all users (sampled using the modulus operator in natural user ordering), model fidelity was calculated to be 0.15422382671480145 (~15.4%) when only considering ratings in the training set. This was done using global association rules only
+- To avoid computationally expensive operations, a 1% sample of all users (sampled using the modulus operator in natural user ordering) was used. This was done using global association rules only. For top-n calculation, movies users had rated before were allowed.
+
+Results:
+    n=20: 0.15422382671480145 (~15.4%) (redo!)
+    n=30: (Peake, Wang): ?
+    n=40: ?
 
 MF-model
 - Model was trained using the MovieLense 20m set of ratings, with a 75%/25% train-test split. Model was eveluated using Root Mean Square Error on the test dataset. Models with different number of factors were tested.
