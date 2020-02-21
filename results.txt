@@ -9,8 +9,21 @@ Results:
     n=40: ?
 
 MF-model
-- Model was trained using the MovieLense 20m set of ratings, with a 75%/25% train-test split. Model was eveluated using Root Mean Square Error on the test dataset. Models with different number of factors were tested.
+- Model was trained using the MovieLense 20m set of ratings. The data was first split with a 75%/25% train-test split. Training set was then used for cross-vadidation with 4 splits. Hyperparameters n_factors and n_epochs were optimised separately:
+
+n_epochs (RMSE, MAE)
+1: (0.8924, 0.6885)
+2: (0.8791, 0.6778)
+5: (0.8583, 0.6602)
+10: (0.8288, 0.6347)
+20: (0.8056, 0.6141)
+35: (0.8087, 0.6150)
+50: (0.8158, 0.6200)
+
+
 - Model with n_factors = 100: 0.7894
 - Model with n_factors = 50: 0.7896
 - Model with n_factors = 10: 0.7971
+
+
 
