@@ -1376,11 +1376,11 @@ static CYTHON_INLINE int __Pyx_IterFinish(void);
 /* UnpackItemEndCheck.proto */
 static int __Pyx_IternextUnpackEndCheck(PyObject *retval, Py_ssize_t expected);
 
-/* BufferIndexError.proto */
-static void __Pyx_RaiseBufferIndexError(int axis);
+/* GetTopmostException.proto */
+#if CYTHON_USE_EXC_INFO_STACK
+static _PyErr_StackItem * __Pyx_PyErr_GetTopmostException(PyThreadState *tstate);
+#endif
 
-#define __Pyx_BufPtrStrided2d(type, buf, i0, s0, i1, s1) (type)((char*)buf + i0 * s0 + i1 * s1)
-#define __Pyx_BufPtrStrided1d(type, buf, i0, s0) (type)((char*)buf + i0 * s0)
 /* PyThreadStateGet.proto */
 #if CYTHON_FAST_THREAD_STATE
 #define __Pyx_PyThreadState_declare  PyThreadState *__pyx_tstate;
@@ -1392,6 +1392,38 @@ static void __Pyx_RaiseBufferIndexError(int axis);
 #define __Pyx_PyErr_Occurred()  PyErr_Occurred()
 #endif
 
+/* SaveResetException.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_ExceptionSave(type, value, tb)  __Pyx__ExceptionSave(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#define __Pyx_ExceptionReset(type, value, tb)  __Pyx__ExceptionReset(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
+#else
+#define __Pyx_ExceptionSave(type, value, tb)   PyErr_GetExcInfo(type, value, tb)
+#define __Pyx_ExceptionReset(type, value, tb)  PyErr_SetExcInfo(type, value, tb)
+#endif
+
+/* PyErrExceptionMatches.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
+static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err);
+#else
+#define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
+#endif
+
+/* GetException.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_GetException(type, value, tb)  __Pyx__GetException(__pyx_tstate, type, value, tb)
+static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#else
+static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb);
+#endif
+
+/* BufferIndexError.proto */
+static void __Pyx_RaiseBufferIndexError(int axis);
+
+#define __Pyx_BufPtrStrided2d(type, buf, i0, s0, i1, s1) (type)((char*)buf + i0 * s0 + i1 * s1)
+#define __Pyx_BufPtrStrided1d(type, buf, i0, s0) (type)((char*)buf + i0 * s0)
 /* PyErrFetchRestore.proto */
 #if CYTHON_FAST_THREAD_STATE
 #define __Pyx_PyErr_Clear() __Pyx_ErrRestore(NULL, NULL, NULL)
@@ -1476,38 +1508,6 @@ static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key);
 
 /* RaiseNoneIterError.proto */
 static CYTHON_INLINE void __Pyx_RaiseNoneNotIterableError(void);
-
-/* GetTopmostException.proto */
-#if CYTHON_USE_EXC_INFO_STACK
-static _PyErr_StackItem * __Pyx_PyErr_GetTopmostException(PyThreadState *tstate);
-#endif
-
-/* SaveResetException.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_ExceptionSave(type, value, tb)  __Pyx__ExceptionSave(__pyx_tstate, type, value, tb)
-static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
-#define __Pyx_ExceptionReset(type, value, tb)  __Pyx__ExceptionReset(__pyx_tstate, type, value, tb)
-static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
-#else
-#define __Pyx_ExceptionSave(type, value, tb)   PyErr_GetExcInfo(type, value, tb)
-#define __Pyx_ExceptionReset(type, value, tb)  PyErr_SetExcInfo(type, value, tb)
-#endif
-
-/* PyErrExceptionMatches.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
-static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err);
-#else
-#define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
-#endif
-
-/* GetException.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_GetException(type, value, tb)  __Pyx__GetException(__pyx_tstate, type, value, tb)
-static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
-#else
-static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb);
-#endif
 
 /* TypeImport.proto */
 #ifndef __PYX_HAVE_RT_ImportType_proto
@@ -3416,7 +3416,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
  *             if self.verbose:
  *                 print("Processing epoch {}".format(current_epoch))             # <<<<<<<<<<<<<<
  *             for raw_iid, r in rated_items.items():
- *                 i = self.trainset.to_inner_iid(raw_iid)
+ *                 i
  */
       __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_kp_s_Processing_epoch, __pyx_n_s_format); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 78, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
@@ -3451,8 +3451,8 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
  *             if self.verbose:
  *                 print("Processing epoch {}".format(current_epoch))
  *             for raw_iid, r in rated_items.items():             # <<<<<<<<<<<<<<
- *                 i = self.trainset.to_inner_iid(raw_iid)
- * 
+ *                 i
+ *                 try:
  */
     __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_rated_items, __pyx_n_s_items); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
@@ -3563,38 +3563,128 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
       __pyx_t_1 = 0;
       __pyx_v_r = __pyx_t_13;
 
-      /* "editable_svd.pyx":80
- *                 print("Processing epoch {}".format(current_epoch))
+      /* "editable_svd.pyx":81
  *             for raw_iid, r in rated_items.items():
- *                 i = self.trainset.to_inner_iid(raw_iid)             # <<<<<<<<<<<<<<
+ *                 i
+ *                 try:             # <<<<<<<<<<<<<<
+ *                     i = self.trainset.to_inner_iid(raw_iid)
+ *                 except ValueError:
+ */
+      {
+        __Pyx_PyThreadState_declare
+        __Pyx_PyThreadState_assign
+        __Pyx_ExceptionSave(&__pyx_t_15, &__pyx_t_16, &__pyx_t_17);
+        __Pyx_XGOTREF(__pyx_t_15);
+        __Pyx_XGOTREF(__pyx_t_16);
+        __Pyx_XGOTREF(__pyx_t_17);
+        /*try:*/ {
+
+          /* "editable_svd.pyx":82
+ *                 i
+ *                 try:
+ *                     i = self.trainset.to_inner_iid(raw_iid)             # <<<<<<<<<<<<<<
+ *                 except ValueError:
+ *                     continue
+ */
+          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 82, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_10);
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_to_inner_iid); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 82, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_1);
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          __pyx_t_10 = NULL;
+          if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
+            __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_1);
+            if (likely(__pyx_t_10)) {
+              PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
+              __Pyx_INCREF(__pyx_t_10);
+              __Pyx_INCREF(function);
+              __Pyx_DECREF_SET(__pyx_t_1, function);
+            }
+          }
+          __pyx_t_6 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_10, __pyx_v_raw_iid) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_raw_iid);
+          __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+          if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 82, __pyx_L12_error)
+          __Pyx_GOTREF(__pyx_t_6);
+          __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+          __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 82, __pyx_L12_error)
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          __pyx_v_i = __pyx_t_5;
+
+          /* "editable_svd.pyx":81
+ *             for raw_iid, r in rated_items.items():
+ *                 i
+ *                 try:             # <<<<<<<<<<<<<<
+ *                     i = self.trainset.to_inner_iid(raw_iid)
+ *                 except ValueError:
+ */
+        }
+        __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
+        __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
+        __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
+        goto __pyx_L19_try_end;
+        __pyx_L12_error:;
+        __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+        __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+        __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+        __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+        __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
+        __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
+
+        /* "editable_svd.pyx":83
+ *                 try:
+ *                     i = self.trainset.to_inner_iid(raw_iid)
+ *                 except ValueError:             # <<<<<<<<<<<<<<
+ *                     continue
+ * 
+ */
+        __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
+        if (__pyx_t_5) {
+          __Pyx_AddTraceback("editable_svd.EditableSVD.fit_new_user", __pyx_clineno, __pyx_lineno, __pyx_filename);
+          if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_1, &__pyx_t_10) < 0) __PYX_ERR(0, 83, __pyx_L14_except_error)
+          __Pyx_GOTREF(__pyx_t_6);
+          __Pyx_GOTREF(__pyx_t_1);
+          __Pyx_GOTREF(__pyx_t_10);
+
+          /* "editable_svd.pyx":84
+ *                     i = self.trainset.to_inner_iid(raw_iid)
+ *                 except ValueError:
+ *                     continue             # <<<<<<<<<<<<<<
  * 
  *                 # compute current error
  */
-      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 80, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_10);
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_to_inner_iid); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 80, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-      __pyx_t_10 = NULL;
-      if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
-        __pyx_t_10 = PyMethod_GET_SELF(__pyx_t_1);
-        if (likely(__pyx_t_10)) {
-          PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-          __Pyx_INCREF(__pyx_t_10);
-          __Pyx_INCREF(function);
-          __Pyx_DECREF_SET(__pyx_t_1, function);
+          goto __pyx_L21_except_continue;
+          __pyx_L21_except_continue:;
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+          __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+          goto __pyx_L18_try_continue;
         }
-      }
-      __pyx_t_6 = (__pyx_t_10) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_10, __pyx_v_raw_iid) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_raw_iid);
-      __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
-      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 80, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_6); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 80, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_v_i = __pyx_t_5;
+        goto __pyx_L14_except_error;
+        __pyx_L14_except_error:;
 
-      /* "editable_svd.pyx":83
+        /* "editable_svd.pyx":81
+ *             for raw_iid, r in rated_items.items():
+ *                 i
+ *                 try:             # <<<<<<<<<<<<<<
+ *                     i = self.trainset.to_inner_iid(raw_iid)
+ *                 except ValueError:
+ */
+        __Pyx_XGIVEREF(__pyx_t_15);
+        __Pyx_XGIVEREF(__pyx_t_16);
+        __Pyx_XGIVEREF(__pyx_t_17);
+        __Pyx_ExceptionReset(__pyx_t_15, __pyx_t_16, __pyx_t_17);
+        goto __pyx_L1_error;
+        __pyx_L18_try_continue:;
+        __Pyx_XGIVEREF(__pyx_t_15);
+        __Pyx_XGIVEREF(__pyx_t_16);
+        __Pyx_XGIVEREF(__pyx_t_17);
+        __Pyx_ExceptionReset(__pyx_t_15, __pyx_t_16, __pyx_t_17);
+        goto __pyx_L8_continue;
+        __pyx_L19_try_end:;
+      }
+
+      /* "editable_svd.pyx":87
  * 
  *                 # compute current error
  *                 dot = 0  # <q_i, p_u>             # <<<<<<<<<<<<<<
@@ -3603,22 +3693,22 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
  */
       __pyx_v_dot = 0.0;
 
-      /* "editable_svd.pyx":84
+      /* "editable_svd.pyx":88
  *                 # compute current error
  *                 dot = 0  # <q_i, p_u>
  *                 for f in range(self.n_factors):             # <<<<<<<<<<<<<<
  *                     dot += qi[i, f] * pu[u, f]
  *                 err = r - (global_mean + bu[u] + bi[i] + dot)
  */
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_n_factors); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 84, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_26 = __Pyx_PyInt_As_long(__pyx_t_6); if (unlikely((__pyx_t_26 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 84, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_n_factors); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 88, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
+      __pyx_t_26 = __Pyx_PyInt_As_long(__pyx_t_10); if (unlikely((__pyx_t_26 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 88, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       __pyx_t_27 = __pyx_t_26;
       for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_27; __pyx_t_5+=1) {
         __pyx_v_f = __pyx_t_5;
 
-        /* "editable_svd.pyx":85
+        /* "editable_svd.pyx":89
  *                 dot = 0  # <q_i, p_u>
  *                 for f in range(self.n_factors):
  *                     dot += qi[i, f] * pu[u, f]             # <<<<<<<<<<<<<<
@@ -3638,7 +3728,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
         } else if (unlikely(__pyx_t_29 >= __pyx_pybuffernd_qi.diminfo[1].shape)) __pyx_t_30 = 1;
         if (unlikely(__pyx_t_30 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_30);
-          __PYX_ERR(0, 85, __pyx_L1_error)
+          __PYX_ERR(0, 89, __pyx_L1_error)
         }
         __pyx_t_31 = __pyx_v_u;
         __pyx_t_32 = __pyx_v_f;
@@ -3653,12 +3743,12 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
         } else if (unlikely(__pyx_t_32 >= __pyx_pybuffernd_pu.diminfo[1].shape)) __pyx_t_30 = 1;
         if (unlikely(__pyx_t_30 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_30);
-          __PYX_ERR(0, 85, __pyx_L1_error)
+          __PYX_ERR(0, 89, __pyx_L1_error)
         }
         __pyx_v_dot = (__pyx_v_dot + ((*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_qi.rcbuffer->pybuffer.buf, __pyx_t_28, __pyx_pybuffernd_qi.diminfo[0].strides, __pyx_t_29, __pyx_pybuffernd_qi.diminfo[1].strides)) * (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_pu.rcbuffer->pybuffer.buf, __pyx_t_31, __pyx_pybuffernd_pu.diminfo[0].strides, __pyx_t_32, __pyx_pybuffernd_pu.diminfo[1].strides))));
       }
 
-      /* "editable_svd.pyx":86
+      /* "editable_svd.pyx":90
  *                 for f in range(self.n_factors):
  *                     dot += qi[i, f] * pu[u, f]
  *                 err = r - (global_mean + bu[u] + bi[i] + dot)             # <<<<<<<<<<<<<<
@@ -3673,7 +3763,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
       } else if (unlikely(__pyx_t_33 >= __pyx_pybuffernd_bu.diminfo[0].shape)) __pyx_t_5 = 0;
       if (unlikely(__pyx_t_5 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_5);
-        __PYX_ERR(0, 86, __pyx_L1_error)
+        __PYX_ERR(0, 90, __pyx_L1_error)
       }
       __pyx_t_34 = __pyx_v_i;
       __pyx_t_5 = -1;
@@ -3683,24 +3773,24 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
       } else if (unlikely(__pyx_t_34 >= __pyx_pybuffernd_bi.diminfo[0].shape)) __pyx_t_5 = 0;
       if (unlikely(__pyx_t_5 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_5);
-        __PYX_ERR(0, 86, __pyx_L1_error)
+        __PYX_ERR(0, 90, __pyx_L1_error)
       }
       __pyx_v_err = (__pyx_v_r - (((__pyx_v_global_mean + (*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_bu.rcbuffer->pybuffer.buf, __pyx_t_33, __pyx_pybuffernd_bu.diminfo[0].strides))) + (*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_bi.rcbuffer->pybuffer.buf, __pyx_t_34, __pyx_pybuffernd_bi.diminfo[0].strides))) + __pyx_v_dot));
 
-      /* "editable_svd.pyx":89
+      /* "editable_svd.pyx":93
  * 
  *                 # update biases
  *                 if self.biased:             # <<<<<<<<<<<<<<
  *                     bu[u] += lr_bu * (err - reg_bu * bu[u])
  *                     #bi[i] += lr_bi * (err - reg_bi * bi[i])
  */
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_biased); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 89, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 89, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_biased); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 93, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
+      __pyx_t_11 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 93, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       if (__pyx_t_11) {
 
-        /* "editable_svd.pyx":90
+        /* "editable_svd.pyx":94
  *                 # update biases
  *                 if self.biased:
  *                     bu[u] += lr_bu * (err - reg_bu * bu[u])             # <<<<<<<<<<<<<<
@@ -3715,7 +3805,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
         } else if (unlikely(__pyx_t_35 >= __pyx_pybuffernd_bu.diminfo[0].shape)) __pyx_t_5 = 0;
         if (unlikely(__pyx_t_5 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_5);
-          __PYX_ERR(0, 90, __pyx_L1_error)
+          __PYX_ERR(0, 94, __pyx_L1_error)
         }
         __pyx_t_36 = __pyx_v_u;
         __pyx_t_5 = -1;
@@ -3725,11 +3815,11 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
         } else if (unlikely(__pyx_t_36 >= __pyx_pybuffernd_bu.diminfo[0].shape)) __pyx_t_5 = 0;
         if (unlikely(__pyx_t_5 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_5);
-          __PYX_ERR(0, 90, __pyx_L1_error)
+          __PYX_ERR(0, 94, __pyx_L1_error)
         }
         *__Pyx_BufPtrStrided1d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_bu.rcbuffer->pybuffer.buf, __pyx_t_36, __pyx_pybuffernd_bu.diminfo[0].strides) += (__pyx_v_lr_bu * (__pyx_v_err - (__pyx_v_reg_bu * (*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_bu.rcbuffer->pybuffer.buf, __pyx_t_35, __pyx_pybuffernd_bu.diminfo[0].strides)))));
 
-        /* "editable_svd.pyx":89
+        /* "editable_svd.pyx":93
  * 
  *                 # update biases
  *                 if self.biased:             # <<<<<<<<<<<<<<
@@ -3738,22 +3828,22 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
  */
       }
 
-      /* "editable_svd.pyx":94
+      /* "editable_svd.pyx":98
  * 
  *                 # update factors
  *                 for f in range(self.n_factors):             # <<<<<<<<<<<<<<
  *                     puf = pu[u, f]
  *                     qif = qi[i, f]
  */
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_n_factors); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 94, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_26 = __Pyx_PyInt_As_long(__pyx_t_6); if (unlikely((__pyx_t_26 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 94, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_n_factors); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 98, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_10);
+      __pyx_t_26 = __Pyx_PyInt_As_long(__pyx_t_10); if (unlikely((__pyx_t_26 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 98, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
       __pyx_t_27 = __pyx_t_26;
       for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_27; __pyx_t_5+=1) {
         __pyx_v_f = __pyx_t_5;
 
-        /* "editable_svd.pyx":95
+        /* "editable_svd.pyx":99
  *                 # update factors
  *                 for f in range(self.n_factors):
  *                     puf = pu[u, f]             # <<<<<<<<<<<<<<
@@ -3773,11 +3863,11 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
         } else if (unlikely(__pyx_t_38 >= __pyx_pybuffernd_pu.diminfo[1].shape)) __pyx_t_30 = 1;
         if (unlikely(__pyx_t_30 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_30);
-          __PYX_ERR(0, 95, __pyx_L1_error)
+          __PYX_ERR(0, 99, __pyx_L1_error)
         }
         __pyx_v_puf = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_pu.rcbuffer->pybuffer.buf, __pyx_t_37, __pyx_pybuffernd_pu.diminfo[0].strides, __pyx_t_38, __pyx_pybuffernd_pu.diminfo[1].strides));
 
-        /* "editable_svd.pyx":96
+        /* "editable_svd.pyx":100
  *                 for f in range(self.n_factors):
  *                     puf = pu[u, f]
  *                     qif = qi[i, f]             # <<<<<<<<<<<<<<
@@ -3797,11 +3887,11 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
         } else if (unlikely(__pyx_t_40 >= __pyx_pybuffernd_qi.diminfo[1].shape)) __pyx_t_30 = 1;
         if (unlikely(__pyx_t_30 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_30);
-          __PYX_ERR(0, 96, __pyx_L1_error)
+          __PYX_ERR(0, 100, __pyx_L1_error)
         }
         __pyx_v_qif = (*__Pyx_BufPtrStrided2d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_qi.rcbuffer->pybuffer.buf, __pyx_t_39, __pyx_pybuffernd_qi.diminfo[0].strides, __pyx_t_40, __pyx_pybuffernd_qi.diminfo[1].strides));
 
-        /* "editable_svd.pyx":97
+        /* "editable_svd.pyx":101
  *                     puf = pu[u, f]
  *                     qif = qi[i, f]
  *                     pu[u, f] += lr_pu * (err * qif - reg_pu * puf)             # <<<<<<<<<<<<<<
@@ -3821,7 +3911,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
         } else if (unlikely(__pyx_t_42 >= __pyx_pybuffernd_pu.diminfo[1].shape)) __pyx_t_30 = 1;
         if (unlikely(__pyx_t_30 != -1)) {
           __Pyx_RaiseBufferIndexError(__pyx_t_30);
-          __PYX_ERR(0, 97, __pyx_L1_error)
+          __PYX_ERR(0, 101, __pyx_L1_error)
         }
         *__Pyx_BufPtrStrided2d(__pyx_t_5numpy_double_t *, __pyx_pybuffernd_pu.rcbuffer->pybuffer.buf, __pyx_t_41, __pyx_pybuffernd_pu.diminfo[0].strides, __pyx_t_42, __pyx_pybuffernd_pu.diminfo[1].strides) += (__pyx_v_lr_pu * ((__pyx_v_err * __pyx_v_qif) - (__pyx_v_reg_pu * __pyx_v_puf)));
       }
@@ -3830,9 +3920,10 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
  *             if self.verbose:
  *                 print("Processing epoch {}".format(current_epoch))
  *             for raw_iid, r in rated_items.items():             # <<<<<<<<<<<<<<
- *                 i = self.trainset.to_inner_iid(raw_iid)
- * 
+ *                 i
+ *                 try:
  */
+      __pyx_L8_continue:;
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
@@ -3846,23 +3937,23 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "editable_svd.pyx":100
+  /* "editable_svd.pyx":104
  *                     #qi[i, f] += lr_qi * (err * puf - reg_qi * qif)
  * 
  *         self.bu = bu             # <<<<<<<<<<<<<<
  *         #self.bi = bi
  *         self.pu = pu
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_bu, ((PyObject *)__pyx_v_bu)) < 0) __PYX_ERR(0, 100, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_bu, ((PyObject *)__pyx_v_bu)) < 0) __PYX_ERR(0, 104, __pyx_L1_error)
 
-  /* "editable_svd.pyx":102
+  /* "editable_svd.pyx":106
  *         self.bu = bu
  *         #self.bi = bi
  *         self.pu = pu             # <<<<<<<<<<<<<<
  *         #self.qi = qi
  * 
  */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_pu, ((PyObject *)__pyx_v_pu)) < 0) __PYX_ERR(0, 102, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_pu, ((PyObject *)__pyx_v_pu)) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
 
   /* "editable_svd.pyx":20
  * 
@@ -3916,7 +4007,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_2fit_new_user(CYTHON_UNUS
   return __pyx_r;
 }
 
-/* "editable_svd.pyx":105
+/* "editable_svd.pyx":109
  *         #self.qi = qi
  * 
  *     def delete_user(self, raw_uid):             # <<<<<<<<<<<<<<
@@ -3957,11 +4048,11 @@ static PyObject *__pyx_pw_12editable_svd_11EditableSVD_5delete_user(PyObject *__
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_raw_uid)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("delete_user", 1, 2, 2, 1); __PYX_ERR(0, 105, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("delete_user", 1, 2, 2, 1); __PYX_ERR(0, 109, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "delete_user") < 0)) __PYX_ERR(0, 105, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "delete_user") < 0)) __PYX_ERR(0, 109, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -3974,7 +4065,7 @@ static PyObject *__pyx_pw_12editable_svd_11EditableSVD_5delete_user(PyObject *__
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("delete_user", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 105, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("delete_user", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 109, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("editable_svd.EditableSVD.delete_user", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4001,37 +4092,37 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("delete_user", 0);
 
-  /* "editable_svd.pyx":110
+  /* "editable_svd.pyx":114
  *             rated_items: A dict of (raw) item id mapped to rating given by the new user
  *         """
  *         user_inner_id = self.trainset._raw2inner_id_users[raw_uid]             # <<<<<<<<<<<<<<
  *         self.trainset._raw2inner_id_users.pop(raw_uid)
  *         if self.trainset._inner2raw_id_users is not None:
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_raw2inner_id_users); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_raw2inner_id_users); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_raw_uid); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_raw_uid); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_user_inner_id = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "editable_svd.pyx":111
+  /* "editable_svd.pyx":115
  *         """
  *         user_inner_id = self.trainset._raw2inner_id_users[raw_uid]
  *         self.trainset._raw2inner_id_users.pop(raw_uid)             # <<<<<<<<<<<<<<
  *         if self.trainset._inner2raw_id_users is not None:
  *             self.trainset._inner2raw_id_users.pop(user_inner_id)
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_raw2inner_id_users); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_raw2inner_id_users); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pop); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pop); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -4046,21 +4137,21 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
   }
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, __pyx_v_raw_uid) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_raw_uid);
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 111, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "editable_svd.pyx":112
+  /* "editable_svd.pyx":116
  *         user_inner_id = self.trainset._raw2inner_id_users[raw_uid]
  *         self.trainset._raw2inner_id_users.pop(raw_uid)
  *         if self.trainset._inner2raw_id_users is not None:             # <<<<<<<<<<<<<<
  *             self.trainset._inner2raw_id_users.pop(user_inner_id)
  *         self.bu = np.delete(self.bu, user_inner_id)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_inner2raw_id_users); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 112, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_inner2raw_id_users); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_4 = (__pyx_t_2 != Py_None);
@@ -4068,19 +4159,19 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
   __pyx_t_5 = (__pyx_t_4 != 0);
   if (__pyx_t_5) {
 
-    /* "editable_svd.pyx":113
+    /* "editable_svd.pyx":117
  *         self.trainset._raw2inner_id_users.pop(raw_uid)
  *         if self.trainset._inner2raw_id_users is not None:
  *             self.trainset._inner2raw_id_users.pop(user_inner_id)             # <<<<<<<<<<<<<<
  *         self.bu = np.delete(self.bu, user_inner_id)
  *         self.pu = np.delete(self.pu, user_inner_id, axis=0)
  */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 113, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 117, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_inner2raw_id_users); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 113, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_inner2raw_id_users); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 117, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pop); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 113, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_pop); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 117, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
@@ -4095,12 +4186,12 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
     }
     __pyx_t_2 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_1, __pyx_t_3, __pyx_v_user_inner_id) : __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_v_user_inner_id);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 117, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "editable_svd.pyx":112
+    /* "editable_svd.pyx":116
  *         user_inner_id = self.trainset._raw2inner_id_users[raw_uid]
  *         self.trainset._raw2inner_id_users.pop(raw_uid)
  *         if self.trainset._inner2raw_id_users is not None:             # <<<<<<<<<<<<<<
@@ -4109,19 +4200,19 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
  */
   }
 
-  /* "editable_svd.pyx":114
+  /* "editable_svd.pyx":118
  *         if self.trainset._inner2raw_id_users is not None:
  *             self.trainset._inner2raw_id_users.pop(user_inner_id)
  *         self.bu = np.delete(self.bu, user_inner_id)             # <<<<<<<<<<<<<<
  *         self.pu = np.delete(self.pu, user_inner_id, axis=0)
  *         self.trainset.n_users -= 1
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_delete); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_delete); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_bu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 114, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_bu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_6 = NULL;
   __pyx_t_7 = 0;
@@ -4138,7 +4229,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_3)) {
     PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_t_1, __pyx_v_user_inner_id};
-    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -4147,14 +4238,14 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
     PyObject *__pyx_temp[3] = {__pyx_t_6, __pyx_t_1, __pyx_v_user_inner_id};
-    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_7, 2+__pyx_t_7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   } else
   #endif
   {
-    __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 114, __pyx_L1_error)
+    __pyx_t_8 = PyTuple_New(2+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 118, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     if (__pyx_t_6) {
       __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -4165,29 +4256,29 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
     __Pyx_GIVEREF(__pyx_v_user_inner_id);
     PyTuple_SET_ITEM(__pyx_t_8, 1+__pyx_t_7, __pyx_v_user_inner_id);
     __pyx_t_1 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 114, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_8, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_bu, __pyx_t_2) < 0) __PYX_ERR(0, 114, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_bu, __pyx_t_2) < 0) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "editable_svd.pyx":115
+  /* "editable_svd.pyx":119
  *             self.trainset._inner2raw_id_users.pop(user_inner_id)
  *         self.bu = np.delete(self.bu, user_inner_id)
  *         self.pu = np.delete(self.pu, user_inner_id, axis=0)             # <<<<<<<<<<<<<<
  *         self.trainset.n_users -= 1
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_delete); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_delete); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_pu); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_pu); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_2);
@@ -4195,36 +4286,36 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
   __Pyx_GIVEREF(__pyx_v_user_inner_id);
   PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_v_user_inner_id);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_axis, __pyx_int_0) < 0) __PYX_ERR(0, 115, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_8, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 115, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_axis, __pyx_int_0) < 0) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_8, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_pu, __pyx_t_1) < 0) __PYX_ERR(0, 115, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_n_s_pu, __pyx_t_1) < 0) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "editable_svd.pyx":116
+  /* "editable_svd.pyx":120
  *         self.bu = np.delete(self.bu, user_inner_id)
  *         self.pu = np.delete(self.pu, user_inner_id, axis=0)
  *         self.trainset.n_users -= 1             # <<<<<<<<<<<<<<
  * 
  *     # Override method
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 116, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_n_users); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 116, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_n_users); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_8 = __Pyx_PyInt_SubtractObjC(__pyx_t_2, __pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 116, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyInt_SubtractObjC(__pyx_t_2, __pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_n_users, __pyx_t_8) < 0) __PYX_ERR(0, 116, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_n_users, __pyx_t_8) < 0) __PYX_ERR(0, 120, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "editable_svd.pyx":105
+  /* "editable_svd.pyx":109
  *         #self.qi = qi
  * 
  *     def delete_user(self, raw_uid):             # <<<<<<<<<<<<<<
@@ -4250,7 +4341,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_4delete_user(CYTHON_UNUSE
   return __pyx_r;
 }
 
-/* "editable_svd.pyx":119
+/* "editable_svd.pyx":123
  * 
  *     # Override method
  *     def estimate(self, u, i):             # <<<<<<<<<<<<<<
@@ -4293,17 +4384,17 @@ static PyObject *__pyx_pw_12editable_svd_11EditableSVD_7estimate(PyObject *__pyx
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_u)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("estimate", 1, 3, 3, 1); __PYX_ERR(0, 119, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("estimate", 1, 3, 3, 1); __PYX_ERR(0, 123, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_i)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("estimate", 1, 3, 3, 2); __PYX_ERR(0, 119, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("estimate", 1, 3, 3, 2); __PYX_ERR(0, 123, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "estimate") < 0)) __PYX_ERR(0, 119, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "estimate") < 0)) __PYX_ERR(0, 123, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -4318,7 +4409,7 @@ static PyObject *__pyx_pw_12editable_svd_11EditableSVD_7estimate(PyObject *__pyx
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("estimate", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 119, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("estimate", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 123, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("editable_svd.EditableSVD.estimate", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4348,35 +4439,35 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
   PyObject *__pyx_t_9 = NULL;
   __Pyx_RefNannySetupContext("estimate", 0);
 
-  /* "editable_svd.pyx":120
+  /* "editable_svd.pyx":124
  *     # Override method
  *     def estimate(self, u, i):
  *         known_user = u in self.trainset._raw2inner_id_users             # <<<<<<<<<<<<<<
  *         known_item = self.trainset.knows_item(i)
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_raw2inner_id_users); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_raw2inner_id_users); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = (__Pyx_PySequence_ContainsTF(__pyx_v_u, __pyx_t_2, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_3 = (__Pyx_PySequence_ContainsTF(__pyx_v_u, __pyx_t_2, Py_EQ)); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyBool_FromLong(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyBool_FromLong(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_v_known_user = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "editable_svd.pyx":121
+  /* "editable_svd.pyx":125
  *     def estimate(self, u, i):
  *         known_user = u in self.trainset._raw2inner_id_users
  *         known_item = self.trainset.knows_item(i)             # <<<<<<<<<<<<<<
  * 
  *         if self.biased:
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 125, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_knows_item); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_knows_item); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 125, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -4391,69 +4482,69 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
   }
   __pyx_t_2 = (__pyx_t_1) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_1, __pyx_v_i) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_v_i);
   __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
+  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 125, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_known_item = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "editable_svd.pyx":123
+  /* "editable_svd.pyx":127
  *         known_item = self.trainset.knows_item(i)
  * 
  *         if self.biased:             # <<<<<<<<<<<<<<
  *             est = self.trainset.global_mean
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_biased); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_biased); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "editable_svd.pyx":124
+    /* "editable_svd.pyx":128
  * 
  *         if self.biased:
  *             est = self.trainset.global_mean             # <<<<<<<<<<<<<<
  * 
  *             if known_user:
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_trainset); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 128, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_global_mean); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_global_mean); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 128, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_est = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "editable_svd.pyx":126
+    /* "editable_svd.pyx":130
  *             est = self.trainset.global_mean
  * 
  *             if known_user:             # <<<<<<<<<<<<<<
  *                 est += self.bu[u]
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_v_known_user); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 126, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_v_known_user); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 130, __pyx_L1_error)
     if (__pyx_t_3) {
 
-      /* "editable_svd.pyx":127
+      /* "editable_svd.pyx":131
  * 
  *             if known_user:
  *                 est += self.bu[u]             # <<<<<<<<<<<<<<
  * 
  *             if known_item:
  */
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_bu); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_bu); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 131, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_v_u); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_v_u); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 131, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_est, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
+      __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_est, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 131, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF_SET(__pyx_v_est, __pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "editable_svd.pyx":126
+      /* "editable_svd.pyx":130
  *             est = self.trainset.global_mean
  * 
  *             if known_user:             # <<<<<<<<<<<<<<
@@ -4462,35 +4553,35 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
  */
     }
 
-    /* "editable_svd.pyx":129
+    /* "editable_svd.pyx":133
  *                 est += self.bu[u]
  * 
  *             if known_item:             # <<<<<<<<<<<<<<
  *                 est += self.bi[i]
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_v_known_item); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 129, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_v_known_item); if (unlikely(__pyx_t_3 < 0)) __PYX_ERR(0, 133, __pyx_L1_error)
     if (__pyx_t_3) {
 
-      /* "editable_svd.pyx":130
+      /* "editable_svd.pyx":134
  * 
  *             if known_item:
  *                 est += self.bi[i]             # <<<<<<<<<<<<<<
  * 
  *             if known_user and known_item:
  */
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_bi); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 130, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_bi); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 134, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 134, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_est, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 130, __pyx_L1_error)
+      __pyx_t_4 = PyNumber_InPlaceAdd(__pyx_v_est, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 134, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF_SET(__pyx_v_est, __pyx_t_4);
       __pyx_t_4 = 0;
 
-      /* "editable_svd.pyx":129
+      /* "editable_svd.pyx":133
  *                 est += self.bu[u]
  * 
  *             if known_item:             # <<<<<<<<<<<<<<
@@ -4499,44 +4590,44 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
  */
     }
 
-    /* "editable_svd.pyx":132
+    /* "editable_svd.pyx":136
  *                 est += self.bi[i]
  * 
  *             if known_user and known_item:             # <<<<<<<<<<<<<<
  *                 est += np.dot(self.qi[i], self.pu[u])
  * 
  */
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_known_user); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 132, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_known_user); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 136, __pyx_L1_error)
     if (__pyx_t_5) {
     } else {
       __pyx_t_3 = __pyx_t_5;
       goto __pyx_L7_bool_binop_done;
     }
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_known_item); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 132, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_known_item); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 136, __pyx_L1_error)
     __pyx_t_3 = __pyx_t_5;
     __pyx_L7_bool_binop_done:;
     if (__pyx_t_3) {
 
-      /* "editable_svd.pyx":133
+      /* "editable_svd.pyx":137
  * 
  *             if known_user and known_item:
  *                 est += np.dot(self.qi[i], self.pu[u])             # <<<<<<<<<<<<<<
  * 
  *         else:
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 133, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_dot); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_dot); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_qi); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 133, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_qi); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 133, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 137, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_pu); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 133, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_pu); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_7 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_u); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 133, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_v_u); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 137, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_2 = NULL;
@@ -4554,7 +4645,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_1)) {
         PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_t_6, __pyx_t_7};
-        __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 133, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -4564,7 +4655,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_1)) {
         PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_t_6, __pyx_t_7};
-        __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 133, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_1, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
@@ -4572,7 +4663,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       } else
       #endif
       {
-        __pyx_t_9 = PyTuple_New(2+__pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 133, __pyx_L1_error)
+        __pyx_t_9 = PyTuple_New(2+__pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 137, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_9);
         if (__pyx_t_2) {
           __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_t_2); __pyx_t_2 = NULL;
@@ -4583,18 +4674,18 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
         PyTuple_SET_ITEM(__pyx_t_9, 1+__pyx_t_8, __pyx_t_7);
         __pyx_t_6 = 0;
         __pyx_t_7 = 0;
-        __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_9, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 133, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_1, __pyx_t_9, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = PyNumber_InPlaceAdd(__pyx_v_est, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
+      __pyx_t_1 = PyNumber_InPlaceAdd(__pyx_v_est, __pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF_SET(__pyx_v_est, __pyx_t_1);
       __pyx_t_1 = 0;
 
-      /* "editable_svd.pyx":132
+      /* "editable_svd.pyx":136
  *                 est += self.bi[i]
  * 
  *             if known_user and known_item:             # <<<<<<<<<<<<<<
@@ -4603,7 +4694,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
  */
     }
 
-    /* "editable_svd.pyx":123
+    /* "editable_svd.pyx":127
  *         known_item = self.trainset.knows_item(i)
  * 
  *         if self.biased:             # <<<<<<<<<<<<<<
@@ -4613,7 +4704,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
     goto __pyx_L3;
   }
 
-  /* "editable_svd.pyx":136
+  /* "editable_svd.pyx":140
  * 
  *         else:
  *             if known_user and known_item:             # <<<<<<<<<<<<<<
@@ -4621,37 +4712,37 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
  *             else:
  */
   /*else*/ {
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_known_user); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 136, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_known_user); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 140, __pyx_L1_error)
     if (__pyx_t_5) {
     } else {
       __pyx_t_3 = __pyx_t_5;
       goto __pyx_L10_bool_binop_done;
     }
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_known_item); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 136, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_known_item); if (unlikely(__pyx_t_5 < 0)) __PYX_ERR(0, 140, __pyx_L1_error)
     __pyx_t_3 = __pyx_t_5;
     __pyx_L10_bool_binop_done:;
     if (likely(__pyx_t_3)) {
 
-      /* "editable_svd.pyx":137
+      /* "editable_svd.pyx":141
  *         else:
  *             if known_user and known_item:
  *                 est = np.dot(self.qi[i], self.pu[u])             # <<<<<<<<<<<<<<
  *             else:
  *                 raise PredictionImpossible('User and item are unknown.')
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_dot); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 137, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_dot); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 141, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_qi); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_qi); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_7 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_v_i); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 137, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_v_i); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 141, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_pu); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 137, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_n_s_pu); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_v_u); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 137, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_t_4, __pyx_v_u); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 141, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_4 = NULL;
@@ -4669,7 +4760,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_9)) {
         PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_t_7, __pyx_t_6};
-        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_9, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_9, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4679,7 +4770,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_9)) {
         PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_t_7, __pyx_t_6};
-        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_9, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_9, __pyx_temp+1-__pyx_t_8, 2+__pyx_t_8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -4687,7 +4778,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       } else
       #endif
       {
-        __pyx_t_2 = PyTuple_New(2+__pyx_t_8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_New(2+__pyx_t_8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         if (__pyx_t_4) {
           __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -4698,7 +4789,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
         PyTuple_SET_ITEM(__pyx_t_2, 1+__pyx_t_8, __pyx_t_6);
         __pyx_t_7 = 0;
         __pyx_t_6 = 0;
-        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_9, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_9, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       }
@@ -4706,7 +4797,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       __pyx_v_est = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "editable_svd.pyx":136
+      /* "editable_svd.pyx":140
  * 
  *         else:
  *             if known_user and known_item:             # <<<<<<<<<<<<<<
@@ -4716,7 +4807,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       goto __pyx_L9;
     }
 
-    /* "editable_svd.pyx":139
+    /* "editable_svd.pyx":143
  *                 est = np.dot(self.qi[i], self.pu[u])
  *             else:
  *                 raise PredictionImpossible('User and item are unknown.')             # <<<<<<<<<<<<<<
@@ -4724,7 +4815,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
  *         return est
  */
     /*else*/ {
-      __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_PredictionImpossible); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 139, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_n_s_PredictionImpossible); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 143, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __pyx_t_2 = NULL;
       if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_9))) {
@@ -4738,18 +4829,18 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
       }
       __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_9, __pyx_t_2, __pyx_kp_s_User_and_item_are_unknown) : __Pyx_PyObject_CallOneArg(__pyx_t_9, __pyx_kp_s_User_and_item_are_unknown);
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 143, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 139, __pyx_L1_error)
+      __PYX_ERR(0, 143, __pyx_L1_error)
     }
     __pyx_L9:;
   }
   __pyx_L3:;
 
-  /* "editable_svd.pyx":141
+  /* "editable_svd.pyx":145
  *                 raise PredictionImpossible('User and item are unknown.')
  * 
  *         return est             # <<<<<<<<<<<<<<
@@ -4760,7 +4851,7 @@ static PyObject *__pyx_pf_12editable_svd_11EditableSVD_6estimate(CYTHON_UNUSED P
   __pyx_r = __pyx_v_est;
   goto __pyx_L0;
 
-  /* "editable_svd.pyx":119
+  /* "editable_svd.pyx":123
  * 
  *     # Override method
  *     def estimate(self, u, i):             # <<<<<<<<<<<<<<
@@ -7354,7 +7445,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 76, __pyx_L1_error)
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(1, 272, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 83, __pyx_L1_error)
   __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) __PYX_ERR(1, 856, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 1038, __pyx_L1_error)
   return 0;
@@ -7470,29 +7561,29 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__11);
   __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(3, 0, 28, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_editable_svd_pyx, __pyx_n_s_fit_new_user, 20, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 20, __pyx_L1_error)
 
-  /* "editable_svd.pyx":105
+  /* "editable_svd.pyx":109
  *         #self.qi = qi
  * 
  *     def delete_user(self, raw_uid):             # <<<<<<<<<<<<<<
  *         """
  *             Removes a user. Doesn't remove their effect from the biases of items or other users
  */
-  __pyx_tuple__13 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_raw_uid, __pyx_n_s_user_inner_id); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_tuple__13 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_raw_uid, __pyx_n_s_user_inner_id); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__13);
   __Pyx_GIVEREF(__pyx_tuple__13);
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(2, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_editable_svd_pyx, __pyx_n_s_delete_user, 105, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(2, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__13, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_editable_svd_pyx, __pyx_n_s_delete_user, 109, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 109, __pyx_L1_error)
 
-  /* "editable_svd.pyx":119
+  /* "editable_svd.pyx":123
  * 
  *     # Override method
  *     def estimate(self, u, i):             # <<<<<<<<<<<<<<
  *         known_user = u in self.trainset._raw2inner_id_users
  *         known_item = self.trainset.knows_item(i)
  */
-  __pyx_tuple__15 = PyTuple_Pack(6, __pyx_n_s_self, __pyx_n_s_u, __pyx_n_s_i, __pyx_n_s_known_user, __pyx_n_s_known_item, __pyx_n_s_est); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_tuple__15 = PyTuple_Pack(6, __pyx_n_s_self, __pyx_n_s_u, __pyx_n_s_i, __pyx_n_s_known_user, __pyx_n_s_known_item, __pyx_n_s_est); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__15);
   __Pyx_GIVEREF(__pyx_tuple__15);
-  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(3, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_editable_svd_pyx, __pyx_n_s_estimate, 119, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_codeobj__16 = (PyObject*)__Pyx_PyCode_New(3, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__15, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_editable_svd_pyx, __pyx_n_s_estimate, 123, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__16)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -7926,28 +8017,28 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_fit_new_user, __pyx_t_4) < 0) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "editable_svd.pyx":105
+  /* "editable_svd.pyx":109
  *         #self.qi = qi
  * 
  *     def delete_user(self, raw_uid):             # <<<<<<<<<<<<<<
  *         """
  *             Removes a user. Doesn't remove their effect from the biases of items or other users
  */
-  __pyx_t_4 = __Pyx_CyFunction_NewEx(&__pyx_mdef_12editable_svd_11EditableSVD_5delete_user, 0, __pyx_n_s_EditableSVD_delete_user, NULL, __pyx_n_s_editable_svd, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_NewEx(&__pyx_mdef_12editable_svd_11EditableSVD_5delete_user, 0, __pyx_n_s_EditableSVD_delete_user, NULL, __pyx_n_s_editable_svd, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_delete_user, __pyx_t_4) < 0) __PYX_ERR(0, 105, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_delete_user, __pyx_t_4) < 0) __PYX_ERR(0, 109, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "editable_svd.pyx":119
+  /* "editable_svd.pyx":123
  * 
  *     # Override method
  *     def estimate(self, u, i):             # <<<<<<<<<<<<<<
  *         known_user = u in self.trainset._raw2inner_id_users
  *         known_item = self.trainset.knows_item(i)
  */
-  __pyx_t_4 = __Pyx_CyFunction_NewEx(&__pyx_mdef_12editable_svd_11EditableSVD_7estimate, 0, __pyx_n_s_EditableSVD_estimate, NULL, __pyx_n_s_editable_svd, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_CyFunction_NewEx(&__pyx_mdef_12editable_svd_11EditableSVD_7estimate, 0, __pyx_n_s_EditableSVD_estimate, NULL, __pyx_n_s_editable_svd, __pyx_d, ((PyObject *)__pyx_codeobj__16)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_estimate, __pyx_t_4) < 0) __PYX_ERR(0, 119, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_3, __pyx_n_s_estimate, __pyx_t_4) < 0) __PYX_ERR(0, 123, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "editable_svd.pyx":8
@@ -9310,6 +9401,161 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
     return 0;
 }
 
+/* GetTopmostException */
+  #if CYTHON_USE_EXC_INFO_STACK
+static _PyErr_StackItem *
+__Pyx_PyErr_GetTopmostException(PyThreadState *tstate)
+{
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
+           exc_info->previous_item != NULL)
+    {
+        exc_info = exc_info->previous_item;
+    }
+    return exc_info;
+}
+#endif
+
+/* SaveResetException */
+  #if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+    #if CYTHON_USE_EXC_INFO_STACK
+    _PyErr_StackItem *exc_info = __Pyx_PyErr_GetTopmostException(tstate);
+    *type = exc_info->exc_type;
+    *value = exc_info->exc_value;
+    *tb = exc_info->exc_traceback;
+    #else
+    *type = tstate->exc_type;
+    *value = tstate->exc_value;
+    *tb = tstate->exc_traceback;
+    #endif
+    Py_XINCREF(*type);
+    Py_XINCREF(*value);
+    Py_XINCREF(*tb);
+}
+static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    #if CYTHON_USE_EXC_INFO_STACK
+    _PyErr_StackItem *exc_info = tstate->exc_info;
+    tmp_type = exc_info->exc_type;
+    tmp_value = exc_info->exc_value;
+    tmp_tb = exc_info->exc_traceback;
+    exc_info->exc_type = type;
+    exc_info->exc_value = value;
+    exc_info->exc_traceback = tb;
+    #else
+    tmp_type = tstate->exc_type;
+    tmp_value = tstate->exc_value;
+    tmp_tb = tstate->exc_traceback;
+    tstate->exc_type = type;
+    tstate->exc_value = value;
+    tstate->exc_traceback = tb;
+    #endif
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+}
+#endif
+
+/* PyErrExceptionMatches */
+  #if CYTHON_FAST_THREAD_STATE
+static int __Pyx_PyErr_ExceptionMatchesTuple(PyObject *exc_type, PyObject *tuple) {
+    Py_ssize_t i, n;
+    n = PyTuple_GET_SIZE(tuple);
+#if PY_MAJOR_VERSION >= 3
+    for (i=0; i<n; i++) {
+        if (exc_type == PyTuple_GET_ITEM(tuple, i)) return 1;
+    }
+#endif
+    for (i=0; i<n; i++) {
+        if (__Pyx_PyErr_GivenExceptionMatches(exc_type, PyTuple_GET_ITEM(tuple, i))) return 1;
+    }
+    return 0;
+}
+static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err) {
+    PyObject *exc_type = tstate->curexc_type;
+    if (exc_type == err) return 1;
+    if (unlikely(!exc_type)) return 0;
+    if (unlikely(PyTuple_Check(err)))
+        return __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
+    return __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
+}
+#endif
+
+/* GetException */
+  #if CYTHON_FAST_THREAD_STATE
+static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb)
+#else
+static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb)
+#endif
+{
+    PyObject *local_type, *local_value, *local_tb;
+#if CYTHON_FAST_THREAD_STATE
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    local_type = tstate->curexc_type;
+    local_value = tstate->curexc_value;
+    local_tb = tstate->curexc_traceback;
+    tstate->curexc_type = 0;
+    tstate->curexc_value = 0;
+    tstate->curexc_traceback = 0;
+#else
+    PyErr_Fetch(&local_type, &local_value, &local_tb);
+#endif
+    PyErr_NormalizeException(&local_type, &local_value, &local_tb);
+#if CYTHON_FAST_THREAD_STATE
+    if (unlikely(tstate->curexc_type))
+#else
+    if (unlikely(PyErr_Occurred()))
+#endif
+        goto bad;
+    #if PY_MAJOR_VERSION >= 3
+    if (local_tb) {
+        if (unlikely(PyException_SetTraceback(local_value, local_tb) < 0))
+            goto bad;
+    }
+    #endif
+    Py_XINCREF(local_tb);
+    Py_XINCREF(local_type);
+    Py_XINCREF(local_value);
+    *type = local_type;
+    *value = local_value;
+    *tb = local_tb;
+#if CYTHON_FAST_THREAD_STATE
+    #if CYTHON_USE_EXC_INFO_STACK
+    {
+        _PyErr_StackItem *exc_info = tstate->exc_info;
+        tmp_type = exc_info->exc_type;
+        tmp_value = exc_info->exc_value;
+        tmp_tb = exc_info->exc_traceback;
+        exc_info->exc_type = local_type;
+        exc_info->exc_value = local_value;
+        exc_info->exc_traceback = local_tb;
+    }
+    #else
+    tmp_type = tstate->exc_type;
+    tmp_value = tstate->exc_value;
+    tmp_tb = tstate->exc_traceback;
+    tstate->exc_type = local_type;
+    tstate->exc_value = local_value;
+    tstate->exc_traceback = local_tb;
+    #endif
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+#else
+    PyErr_SetExcInfo(local_type, local_value, local_tb);
+#endif
+    return 0;
+bad:
+    *type = 0;
+    *value = 0;
+    *tb = 0;
+    Py_XDECREF(local_type);
+    Py_XDECREF(local_value);
+    Py_XDECREF(local_tb);
+    return -1;
+}
+
 /* BufferIndexError */
   static void __Pyx_RaiseBufferIndexError(int axis) {
   PyErr_Format(PyExc_IndexError,
@@ -9766,161 +10012,6 @@ static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key) {
 /* RaiseNoneIterError */
   static CYTHON_INLINE void __Pyx_RaiseNoneNotIterableError(void) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-}
-
-/* GetTopmostException */
-  #if CYTHON_USE_EXC_INFO_STACK
-static _PyErr_StackItem *
-__Pyx_PyErr_GetTopmostException(PyThreadState *tstate)
-{
-    _PyErr_StackItem *exc_info = tstate->exc_info;
-    while ((exc_info->exc_type == NULL || exc_info->exc_type == Py_None) &&
-           exc_info->previous_item != NULL)
-    {
-        exc_info = exc_info->previous_item;
-    }
-    return exc_info;
-}
-#endif
-
-/* SaveResetException */
-  #if CYTHON_FAST_THREAD_STATE
-static CYTHON_INLINE void __Pyx__ExceptionSave(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
-    #if CYTHON_USE_EXC_INFO_STACK
-    _PyErr_StackItem *exc_info = __Pyx_PyErr_GetTopmostException(tstate);
-    *type = exc_info->exc_type;
-    *value = exc_info->exc_value;
-    *tb = exc_info->exc_traceback;
-    #else
-    *type = tstate->exc_type;
-    *value = tstate->exc_value;
-    *tb = tstate->exc_traceback;
-    #endif
-    Py_XINCREF(*type);
-    Py_XINCREF(*value);
-    Py_XINCREF(*tb);
-}
-static CYTHON_INLINE void __Pyx__ExceptionReset(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    #if CYTHON_USE_EXC_INFO_STACK
-    _PyErr_StackItem *exc_info = tstate->exc_info;
-    tmp_type = exc_info->exc_type;
-    tmp_value = exc_info->exc_value;
-    tmp_tb = exc_info->exc_traceback;
-    exc_info->exc_type = type;
-    exc_info->exc_value = value;
-    exc_info->exc_traceback = tb;
-    #else
-    tmp_type = tstate->exc_type;
-    tmp_value = tstate->exc_value;
-    tmp_tb = tstate->exc_traceback;
-    tstate->exc_type = type;
-    tstate->exc_value = value;
-    tstate->exc_traceback = tb;
-    #endif
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-}
-#endif
-
-/* PyErrExceptionMatches */
-  #if CYTHON_FAST_THREAD_STATE
-static int __Pyx_PyErr_ExceptionMatchesTuple(PyObject *exc_type, PyObject *tuple) {
-    Py_ssize_t i, n;
-    n = PyTuple_GET_SIZE(tuple);
-#if PY_MAJOR_VERSION >= 3
-    for (i=0; i<n; i++) {
-        if (exc_type == PyTuple_GET_ITEM(tuple, i)) return 1;
-    }
-#endif
-    for (i=0; i<n; i++) {
-        if (__Pyx_PyErr_GivenExceptionMatches(exc_type, PyTuple_GET_ITEM(tuple, i))) return 1;
-    }
-    return 0;
-}
-static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err) {
-    PyObject *exc_type = tstate->curexc_type;
-    if (exc_type == err) return 1;
-    if (unlikely(!exc_type)) return 0;
-    if (unlikely(PyTuple_Check(err)))
-        return __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
-    return __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
-}
-#endif
-
-/* GetException */
-  #if CYTHON_FAST_THREAD_STATE
-static int __Pyx__GetException(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb)
-#else
-static int __Pyx_GetException(PyObject **type, PyObject **value, PyObject **tb)
-#endif
-{
-    PyObject *local_type, *local_value, *local_tb;
-#if CYTHON_FAST_THREAD_STATE
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    local_type = tstate->curexc_type;
-    local_value = tstate->curexc_value;
-    local_tb = tstate->curexc_traceback;
-    tstate->curexc_type = 0;
-    tstate->curexc_value = 0;
-    tstate->curexc_traceback = 0;
-#else
-    PyErr_Fetch(&local_type, &local_value, &local_tb);
-#endif
-    PyErr_NormalizeException(&local_type, &local_value, &local_tb);
-#if CYTHON_FAST_THREAD_STATE
-    if (unlikely(tstate->curexc_type))
-#else
-    if (unlikely(PyErr_Occurred()))
-#endif
-        goto bad;
-    #if PY_MAJOR_VERSION >= 3
-    if (local_tb) {
-        if (unlikely(PyException_SetTraceback(local_value, local_tb) < 0))
-            goto bad;
-    }
-    #endif
-    Py_XINCREF(local_tb);
-    Py_XINCREF(local_type);
-    Py_XINCREF(local_value);
-    *type = local_type;
-    *value = local_value;
-    *tb = local_tb;
-#if CYTHON_FAST_THREAD_STATE
-    #if CYTHON_USE_EXC_INFO_STACK
-    {
-        _PyErr_StackItem *exc_info = tstate->exc_info;
-        tmp_type = exc_info->exc_type;
-        tmp_value = exc_info->exc_value;
-        tmp_tb = exc_info->exc_traceback;
-        exc_info->exc_type = local_type;
-        exc_info->exc_value = local_value;
-        exc_info->exc_traceback = local_tb;
-    }
-    #else
-    tmp_type = tstate->exc_type;
-    tmp_value = tstate->exc_value;
-    tmp_tb = tstate->exc_traceback;
-    tstate->exc_type = local_type;
-    tstate->exc_value = local_value;
-    tstate->exc_traceback = local_tb;
-    #endif
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-#else
-    PyErr_SetExcInfo(local_type, local_value, local_tb);
-#endif
-    return 0;
-bad:
-    *type = 0;
-    *value = 0;
-    *tb = 0;
-    Py_XDECREF(local_type);
-    Py_XDECREF(local_value);
-    Py_XDECREF(local_tb);
-    return -1;
 }
 
 /* TypeImport */

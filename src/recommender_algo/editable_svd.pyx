@@ -77,7 +77,11 @@ class EditableSVD(SVD):
             if self.verbose:
                 print("Processing epoch {}".format(current_epoch))
             for raw_iid, r in rated_items.items():
-                i = self.trainset.to_inner_iid(raw_iid)
+                i
+                try:
+                    i = self.trainset.to_inner_iid(raw_iid)
+                except ValueError:
+                    continue
 
                 # compute current error
                 dot = 0  # <q_i, p_u>

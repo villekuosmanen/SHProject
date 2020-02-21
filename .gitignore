@@ -3,6 +3,7 @@ data/
 .vscode
 responses/
 *.pickle
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

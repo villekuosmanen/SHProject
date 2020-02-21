@@ -18,7 +18,16 @@ class InfluenceExplainer():
         self.user_rated_items = user_rated_items
         self.user_algo = user_algo
 
+    # Generates and explanation including only the most positively and negatively affecting films
     def generate_explanation(self, recommendation):
+        explanations = self.generate_explanation_for_all(recommendation)
+        positives = explanations[:3]
+        negatives = explanations[-3:]
+        negatives.reverse()
+        return positives, negatives
+    
+    # Generates an explanation including all rated films
+    def generate_explanation_for_all(self, recommendation):
         explanations = []
         for i in self.user_rated_items.keys():
             items_copy = self.user_rated_items.copy()
@@ -29,12 +38,9 @@ class InfluenceExplainer():
 
             # Test prediction
             prediction = self.user_algo.predict(self.user_id, recommendation[0])
-            print("Original: " + str(recommendation[1]) + " Without film: " + str(prediction.est))
+            # print("Original: " + str(recommendation[1]) + " Without film: " + str(prediction.est))
             prediction_delta = recommendation[1] - prediction.est
             explanations.append((i, prediction_delta))
 
         explanations.sort(key=lambda x: x[1], reverse=True)
-        positives = explanations[:3]
-        negatives = explanations[-3:]
-        negatives.reverse()
-        return positives, negatives
+        return explanations

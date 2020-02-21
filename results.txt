@@ -26,4 +26,30 @@ n_epochs (RMSE, MAE)
 - Model with n_factors = 10: 0.7971
 
 
+Influence experiments
 
+Exp 1 (check how variance in predicted influences changes)
+- For 100 simulated users, rate 10 random movies
+- Generate top-6 recommendations
+- Test the influence of each rated movie 20 times (for each recommendation), track mean and standard deviation
+
+At the end, plot mean of all means, and mean of all standard deviations
+Mean of means: 0.22247165233384802, std of stds: 0.016411722250524757
+
+Exp 2 (training with optimisation vs retraining)
+- Used the development set to reduce computation time 
+- For 50 simulated users, rate 20 random movies
+- Train one model with original data, add user by optimisation ("influence")
+- Train baseline by training with original data and user
+- Train control in a way identical to baseline
+- Get top-30 recommendations for each model, compare precision of control and influence (how many recommendations match with recommendations of the baseline)
+
+Results:
+Influence: mean precision=0.2813333333333333, std=0.07800226754073626
+Control: mean precision=0.28733333333333333, std=0.0818964558357567
+
+No significant differences were found between models
+
+Limitations of both:
+- Use random movies and ratings -- in reality some films are rated more, and average of ratings may not be 3.
+- In second, used smaller data set -- may not be representative. Though, likely the optimisation would approximate retraining better in a bigger dataset
