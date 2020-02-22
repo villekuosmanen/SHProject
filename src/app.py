@@ -34,16 +34,23 @@ def get_movies():
 @app.route('/movies/details/<int:movie_id>')
 def get_movie_details(movie_id):
     if movie_id not in moviedb_ids:
-        return jsonify(success=False)
-    link_id = moviedb_ids[movie_id]
-    movie_details = requests.get('https://api.themoviedb.org/3/movie/' + link_id, params={'api_key': api_key}).json()
-    poster_path = movie_details['poster_path']
-    description = movie_details['overview']
+        return jsonify(success=False), 404
+    try:
+        link_id = moviedb_ids[movie_id]
+        movie_details = requests.get('https://api.themoviedb.org/3/movie/' + link_id, params={'api_key': api_key}).json()
+        poster_path = ""
+        if 'poster_path' in movie_details:
+            poster_path = movie_details['poster_path']
+        description = ""
+        if 'overview' in movie_details:
+            description = movie_details['overview']
 
-    release_dates = requests.get('https://api.themoviedb.org/3/movie/' + link_id + 
-        '/release_dates', params={'api_key': api_key}).json()
-    age_rating = get_uk_age_rating(release_dates)
-    return {'poster_path': poster_path, 'description': description, 'age_rating': age_rating}
+        release_dates = requests.get('https://api.themoviedb.org/3/movie/' + link_id + 
+            '/release_dates', params={'api_key': api_key}).json()
+        age_rating = get_uk_age_rating(release_dates)
+        return {'poster_path': poster_path, 'description': description, 'age_rating': age_rating}
+    except (TypeError, KeyError) as e:
+        return jsonify(success=False), 404
 
 @app.route('/movies/<int:user_id>/responses', methods=['POST'])
 def post_movie_responses(user_id):
@@ -133,6 +140,13 @@ def get_recommendations(user_id):
 def post_recommendation_responses(user_id):
     with open("../responses/" + str(user_id), "w+") as fp:
         fp.write(json.dumps(request.json))
+    return jsonify(success=True)
+
+@app.route('/emails', methods=['POST'])
+def post_email_address():
+    email = request.json['email']
+    with open('../responses/emails.txt', 'a') as fd:
+        fd.write(email + '\n')
     return jsonify(success=True)
 
 def initialise():
