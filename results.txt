@@ -5,8 +5,10 @@ Model fidelity:
 
 Results:
     n=20: 0.15422382671480145 (~15.4%) (redo!)
-    n=30: (Peake, Wang): ?
-    n=40: ?
+    n=30: (Peake, Wang): TOO SLOW!
+
+For n=30, support threshold was lifted to 0.05% (?), and a stochaistic method of 0.05% of users was included in calculation.
+The result was 0.2180952380952381 (~21.8%)
 
 MF-model
 - Model was trained using the MovieLense 20m set of ratings. The data was first split with a 75%/25% train-test split. Training set was then used for cross-vadidation with 4 splits. Hyperparameters n_factors and n_epochs were optimised separately:

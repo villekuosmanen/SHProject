@@ -13,8 +13,8 @@ import pickle
 import requests
 import random
 
-from recommender_algo.editable_svd import EditableSVD
 from explanation import InfluenceExplainer, AssociationRulesExplainer
+from recommender_algo.editable_svd import EditableSVD
 
 app = Flask(__name__)
 
