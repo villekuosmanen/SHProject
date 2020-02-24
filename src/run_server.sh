@@ -1,3 +1,1 @@
-export FLASK_APP=app.py
-export FLASK_RUN_PORT=5000
-flask run
+gunicorn -w 1 -b :5000 -t 60 --reload wsgi:app --daemon
