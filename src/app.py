@@ -18,10 +18,8 @@ from recommender_algo.editable_svd import EditableSVD
 
 app = Flask(__name__)
 
-algo = None
-user_algo = None
+user_id = 52849803
 movies_map = {}
-user_rated_items = None
 association_rules = None
 moviedb_ids = {}
 api_key = ""
@@ -52,23 +50,70 @@ def get_movie_details(movie_id):
     except (TypeError, KeyError) as e:
         return jsonify(success=False), 404
 
-@app.route('/movies/<int:user_id>/responses', methods=['POST'])
-def post_movie_responses(user_id):
-    global user_rated_items
-    global user_algo
-
+@app.route('/movies/movie-ratings', methods=['POST'])
+def post_movie_responses():
     responses = request.json
 
     # Retrain model, and save results
     user_rated_items = {rated_movie['key']: rated_movie['rating'] for rated_movie in responses['response']}
+    user_algo = None
     with open("algo-20m.pickle", "rb") as fp:
             user_algo = pickle.load(fp)
     user_algo.fit_new_user(user_id, user_rated_items)
+
+    return get_recommendations(user_id, user_rated_items, user_algo)
+
+@app.route('/recommendations/responses', methods=['POST'])
+def post_recommendation_responses():
+    timestamp = str(datetime.datetime.now())
+    with open("../responses/" + timestamp + ".json", "w+") as fp:
+        fp.write(json.dumps(request.json))
     return jsonify(success=True)
 
-@app.route('/recommendations/<int:user_id>/recommendations')
-def get_recommendations(user_id):
-    recommendations = top_recommendations(user_id)
+@app.route('/emails', methods=['POST'])
+def post_email_address():
+    email = request.json['email']
+    with open('../responses/emails.txt', 'a') as fd:
+        fd.write(email + '\n')
+    return jsonify(success=True)
+
+def initialise():
+    global api_key
+    with open("../data/apiKey.txt", "r") as fp:
+        api_key = fp.read().replace('\n', '')
+
+    links_df = pd.read_csv("../data/ml-20m/links.csv", dtype={
+                               'movieId': int,
+                               'imdbId': str,
+                               'tmdbId': str,
+                             })
+    for index, row in links_df.iterrows():
+        if 'tmdbId' in row:
+            moviedb_ids[row['movieId']] = row['tmdbId']
+    init_movies()
+    init_association_rules()
+    
+def init_movies():
+    movies_df = pd.read_csv("../data/ml-20m/movies.csv", dtype={
+                               'movieId': int,
+                               'title': str,
+                               'genres': str,
+                             })
+    for index, row in movies_df.iterrows():
+            movies_map[row['movieId']] = row['title']
+
+def init_association_rules():
+    global association_rules
+    with open("association-rules-20m.pickle", "rb") as fp:
+        association_rules = pickle.load(fp)
+    # Filter rules
+    association_rules['consequents_length'] = association_rules['consequents'].apply(lambda x: len(x))
+    association_rules['antecedents_length'] = association_rules['antecedents'].apply(lambda x: len(x))
+    association_rules = association_rules[(association_rules['support'] > 0.005) & (association_rules['confidence'] > 0.3) 
+        & (association_rules['antecedents_length'] < 4) & (association_rules['consequents_length'] == 1)]
+
+def get_recommendations(user_id, user_rated_items, user_algo):
+    recommendations = top_recommendations(user_id, user_rated_items, user_algo)
 
     association_rules_explainer = AssociationRulesExplainer(user_rated_items, association_rules)
     recommendations_to_send = []
@@ -136,58 +181,7 @@ def get_recommendations(user_id):
     print(str(recommendations_to_send))
     return {'recommendations': recommendations_to_send}
 
-@app.route('/recommendations/<int:user_id>/responses', methods=['POST'])
-def post_recommendation_responses(user_id):
-    with open("../responses/" + str(user_id), "w+") as fp:
-        fp.write(json.dumps(request.json))
-    return jsonify(success=True)
-
-@app.route('/emails', methods=['POST'])
-def post_email_address():
-    email = request.json['email']
-    with open('../responses/emails.txt', 'a') as fd:
-        fd.write(email + '\n')
-    return jsonify(success=True)
-
-def initialise():
-    global algo
-    global api_key
-    with open("algo-20m.pickle", "rb") as fp:
-        algo = pickle.load(fp)
-    with open("../data/apiKey.txt", "r") as fp:
-        api_key = fp.read().replace('\n', '')
-
-    links_df = pd.read_csv("../data/ml-20m/links.csv", dtype={
-                               'movieId': int,
-                               'imdbId': str,
-                               'tmdbId': str,
-                             })
-    for index, row in links_df.iterrows():
-        if 'tmdbId' in row:
-            moviedb_ids[row['movieId']] = row['tmdbId']
-    init_movies()
-    init_association_rules()
-    
-def init_movies():
-    movies_df = pd.read_csv("../data/ml-20m/movies.csv", dtype={
-                               'movieId': int,
-                               'title': str,
-                               'genres': str,
-                             })
-    for index, row in movies_df.iterrows():
-            movies_map[row['movieId']] = row['title']
-
-def init_association_rules():
-    global association_rules
-    with open("association-rules-20m.pickle", "rb") as fp:
-        association_rules = pickle.load(fp)
-    # Filter rules
-    association_rules['consequents_length'] = association_rules['consequents'].apply(lambda x: len(x))
-    association_rules['antecedents_length'] = association_rules['antecedents'].apply(lambda x: len(x))
-    association_rules = association_rules[(association_rules['support'] > 0.005) & (association_rules['confidence'] > 0.3) 
-        & (association_rules['antecedents_length'] < 4) & (association_rules['consequents_length'] == 1)]
-
-def top_recommendations(user_id):
+def top_recommendations(user_id, user_rated_items, user_algo):
     top_n = []
     for i in movies_map:
         # Filter out rated movies
