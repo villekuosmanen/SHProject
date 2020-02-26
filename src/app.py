@@ -6,6 +6,7 @@ from surprise import Dataset
 from surprise import Reader
 from surprise import accuracy
 from surprise.model_selection import train_test_split
+import logging
 import json
 import datetime
 import copy
@@ -23,6 +24,11 @@ movies_map = {}
 association_rules = None
 moviedb_ids = {}
 api_key = ""
+
+if __name__ != '__main__':
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
 
 @app.route('/movies')
 def get_movies():
@@ -81,6 +87,7 @@ def initialise():
     global api_key
     with open("../data/apiKey.txt", "r") as fp:
         api_key = fp.read().replace('\n', '')
+    logging.basicConfig(filename='../responses/logs.log')
 
     links_df = pd.read_csv("../data/ml-20m/links.csv", dtype={
                                'movieId': int,
@@ -104,13 +111,15 @@ def init_movies():
 
 def init_association_rules():
     global association_rules
-    with open("association-rules-20m.pickle", "rb") as fp:
+    with open("association-rules-20m-n30.pickle", "rb") as fp:
         association_rules = pickle.load(fp)
     # Filter rules
     association_rules['consequents_length'] = association_rules['consequents'].apply(lambda x: len(x))
     association_rules['antecedents_length'] = association_rules['antecedents'].apply(lambda x: len(x))
-    association_rules = association_rules[(association_rules['support'] > 0.005) & (association_rules['confidence'] > 0.3) 
+    association_rules = association_rules[(association_rules['support'] > 0.05) & (association_rules['confidence'] > 0.3) 
         & (association_rules['antecedents_length'] < 4) & (association_rules['consequents_length'] == 1)]
+    # Sort by support
+    association_rules.sort_values(by=['support'], ascending=False)
 
 def get_recommendations(user_id, user_rated_items, user_algo):
     recommendations = top_recommendations(user_id, user_rated_items, user_algo)

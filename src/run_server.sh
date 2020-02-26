@@ -1,1 +1,1 @@
-gunicorn -w 1 -b :5000 -t 60 --reload wsgi:app --daemon
+gunicorn -w 3 -b :5000 -t 60 --reload wsgi:app  --log-level=info --access-logfile='../responses/logs.log' --error-logfile='../responses/error.log' --daemon
