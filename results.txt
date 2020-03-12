@@ -56,3 +56,11 @@ No significant differences were found between models
 Limitations of both:
 - Use random movies and ratings -- in reality some films are rated more, and average of ratings may not be 3.
 - In second, used smaller data set -- may not be representative. Though, likely the optimisation would approximate retraining better in a bigger dataset
+
+
+
+User study results:
+
+A one-way repeated measures ANOVA was used to analyse the ratings. For each user, the mean of ratings they had given to each type of explanation was taken, and rows with missing values were filtered out. In this way, the dataset consisted of 32 means for each explanation type, for both interest and trust.
+
+For interest, 
