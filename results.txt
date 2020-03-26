@@ -10,6 +10,8 @@ Results:
 For n=30, support threshold was lifted to 0.05% (?), and a stochaistic method of 0.05% of users was included in calculation.
 The result was 0.2180952380952381 (~21.8%)
 
+10% of data, filtering out rated films: 0.0649594417536473 (~6.50%)
+
 MF-model
 - Model was trained using the MovieLense 20m set of ratings. The data was first split with a 75%/25% train-test split. Training set was then used for cross-vadidation with 4 splits. Hyperparameters n_factors and n_epochs were optimised separately:
 
@@ -63,4 +65,6 @@ User study results:
 
 A one-way repeated measures ANOVA was used to analyse the ratings. For each user, the mean of ratings they had given to each type of explanation was taken, and rows with missing values were filtered out. In this way, the dataset consisted of 32 means for each explanation type, for both interest and trust.
 
-For interest, 
+EVALUATION:
+RMSE: 0.7897
+MAE: 0.6010
