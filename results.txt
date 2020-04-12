@@ -68,3 +68,8 @@ A one-way repeated measures ANOVA was used to analyse the ratings. For each user
 EVALUATION:
 RMSE: 0.7897
 MAE: 0.6010
+
+
+Time difference (retrain: full vs approximate, my machine, 20m ratings):
+Full (3 tries): 10min 46s, 11min 13s, 10min 40s
+Optimised (3 tries): 0.4s, 0.01s, 0.01s
